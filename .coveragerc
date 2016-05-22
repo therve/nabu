@@ -1,0 +1,7 @@
+[run]
+branch = True
+source = nabu
+omit = nabu/openstack/*
+
+[report]
+ignore_errors = True
