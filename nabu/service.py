@@ -1,4 +1,5 @@
-#
+# -*- coding: utf-8 -*-
+
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
 # a copy of the License at
@@ -11,7 +12,23 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import pbr.version
+import sys
+
+from oslo_config import cfg
+import oslo_i18n
+from oslo_log import log
+
+import nabu
 
 
-__version__ = pbr.version.VersionInfo('nabu').version_string()
+def prepare_service(argv=None, config_files=None):
+    oslo_i18n.enable_lazy()
+    log.register_options(cfg.CONF)
+
+    if argv is None:
+        argv = sys.argv
+    cfg.CONF(argv[1:], project='nabu', validate_default_values=True,
+             version=nabu.__version__,
+             default_config_files=config_files)
+
+    log.setup(cfg.CONF, 'nabu')

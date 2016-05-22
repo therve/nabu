@@ -2,4 +2,12 @@
 # of appearance. Changing the order has an impact on the overall integration
 # process, which may cause wedges in the gate later.
 
+oslo.config
+oslo.context
+oslo.db
+oslo.log
+oslo.middleware
+keystonemiddleware
+PasteDeploy
 pbr>=1.6
+pecan

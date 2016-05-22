@@ -11,7 +11,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import pbr.version
+from oslo_config import cfg
+from oslo_db import api
 
 
-__version__ = pbr.version.VersionInfo('nabu').version_string()
+def get_engine():
+    mapping = {'sqlalchemy': 'nabu.db.api'}
+    return api.DBAPI.from_config(cfg.CONF, backend_mapping=mapping).get_engine()
