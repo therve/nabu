@@ -16,8 +16,24 @@
 # under the License.
 
 from oslotest import base
+from oslo_db.sqlalchemy import test_base
+
+from nabu import context
+from nabu.db import models
 
 
 class TestCase(base.BaseTestCase):
 
     """Test case base class for all unit tests."""
+
+    def setUp(self):
+        super(TestCase, self).setUp()
+        self.context = context.Context('user_name', 'user_id', 'project',
+                                       'project_id', 'domain', 'domain_id',
+                                       'token', 'http://aut_url/', ['role1'],
+                                       {})
+
+
+class DbTestCase(TestCase, test_base.DbTestCase):
+    def generate_schema(self, engine):
+        models.Base.metadata.create_all(engine)

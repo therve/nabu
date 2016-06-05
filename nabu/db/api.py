@@ -54,3 +54,15 @@ def subscription_get(context, id):
 def subscription_delete(context, id):
     return context.session.query(models.Subscription).filter_by(
         id=id, project_id=context.project_id).delete()
+
+
+@enginefacade.reader
+def subscription_match(context, project_id, event_type, event_id):
+    query = context.session.query(models.Subscription).filter_by(
+        project_id=project_id)
+    fragments = event_type.split('.')
+    fragments.append(event_id)
+    fragment_filter = []
+    for index in range(len(fragments)):
+        fragment_filter.append('.'.join(fragments[:index + 1]))
+    return query.filter(models.Subscription.source.in_(fragment_filter))

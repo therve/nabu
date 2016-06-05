@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-
+#
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
 # a copy of the License at
@@ -18,12 +17,10 @@ from paste import deploy
 import pecan
 
 from oslo_config import cfg
-from oslo_context import context
-from oslo_db.sqlalchemy import enginefacade
 from oslo_log import log
 
 from nabu._i18n import _LI
-from nabu.db import api
+from nabu import context
 
 
 LOG = log.getLogger(__name__)
@@ -40,24 +37,6 @@ OPTS = [
 CONF.register_opts(OPTS)
 
 
-@enginefacade.transaction_context_provider
-class Context(context.RequestContext):
-
-    def __init__(self, user_name, user_id, project, project_id, domain_id,
-                 domain_name, auth_token, auth_url, roles, auth_token_info):
-        self.project_id = project_id
-        self.user_id = user_id
-        self.domain_id = domain_id
-        self.auth_url = auth_url
-        self.auth_token_info = auth_token_info
-        super(Context, self).__init__(
-            auth_token=auth_token,
-            user=user_name,
-            tenant=project,
-            user_domain=domain_name,
-            roles=roles)
-
-
 class ContextHook(pecan.hooks.PecanHook):
 
     def before(self, state):
@@ -69,12 +48,12 @@ class ContextHook(pecan.hooks.PecanHook):
         domain_id = headers.get('X-User-Domain-Id')
         domain_name = headers.get('X-User-Domain-Name')
         auth_token = headers.get('X-Auth-Token')
-        auth_url =headers.get('X-Auth-URL')
+        auth_url = headers.get('X-Auth-URL')
         roles = headers.get('X-Roles', '').split(',')
         auth_token_info = state.request.environ.get('keystone.token_info')
 
 
-        state.request.context = Context(
+        state.request.context = context.Context(
             user_name=user_name,
             user_id=user_id,
             project=project,
