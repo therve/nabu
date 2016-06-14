@@ -55,7 +55,10 @@ class SubscriptionRootController(object):
         auth_opts = {'backend': 'keystone', 'options': opts}
         conf = {'auth_opts': auth_opts}
 
-        client = zaqarclient.Client(conf=conf, version=2.0)
+        endpoint = req.environ['keystone.token_auth'].get_endpoint(
+            None, 'messaging')
+
+        client = zaqarclient.Client(url=endpoint, conf=conf, version=2.0)
         data = req.json
         queue = client.queue(data['target'])
         signed_url_data = queue.signed_url(['messages'], methods=['POST'])

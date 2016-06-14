@@ -25,7 +25,6 @@ from nabu import context
 
 LOG = log.getLogger(__name__)
 
-CONF = cfg.CONF
 
 OPTS = [
     cfg.StrOpt('api_paste_config',
@@ -34,7 +33,7 @@ OPTS = [
                ),
 ]
 
-CONF.register_opts(OPTS)
+cfg.CONF.register_opts(OPTS)
 
 
 class ContextHook(pecan.hooks.PecanHook):
@@ -49,9 +48,10 @@ class ContextHook(pecan.hooks.PecanHook):
         domain_name = headers.get('X-User-Domain-Name')
         auth_token = headers.get('X-Auth-Token')
         auth_url = headers.get('X-Auth-URL')
+        if not auth_url:
+            auth_url = cfg.CONF.keystone_authtoken.auth_url
         roles = headers.get('X-Roles', '').split(',')
         auth_token_info = state.request.environ.get('keystone.token_info')
-
 
         state.request.context = context.Context(
             user_name=user_name,
@@ -85,7 +85,7 @@ def load_app():
     cfg_file = None
     cfg_path = cfg.CONF.api_paste_config
     if not os.path.isabs(cfg_path):
-        cfg_file = CONF.find_file(cfg_path)
+        cfg_file = cfg.CONF.find_file(cfg_path)
     elif os.path.exists(cfg_path):
         cfg_file = cfg_path
 

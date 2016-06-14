@@ -14,22 +14,28 @@
 from nabu import context
 from nabu.db import api
 
+from ceilometer import dispatcher
 
-class EventDispatcher(object):
 
-    def __init__(self):
+class EventDispatcher(dispatcher.EventDispatcherBase):
+
+    def __init__(self, conf):
         self.context = context.DispatcherContext()
+        self.conf = conf
 
     def record_events(self, events):
         if not isinstance(events, list):
             events = [events]
 
         for event in events:
-            project_id = event.get('project_id')
-            if project_id is None:
+            ids = [trait[2] for trait in event['traits'] if trait[0] == 'project_id']
+            if not ids:
                 # Nothing we can do with that event
                 continue
+            project_id = ids[0]
+            ids = [trait[2] for trait in event['traits'] if trait[0] == 'instance_id']
+            instance_id = ids[0] if ids else None
             subscribers = api.subscription_match(self.context, project_id,
-                                                 event['type'], event['id'])
+                                                 event['event_type'], instance_id)
             for sub in subscribers:
                 sub.send(event)
