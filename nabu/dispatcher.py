@@ -11,11 +11,14 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import json
+
 from nabu import context
 from nabu.db import api
 from nabu import service
 
 from ceilometer import dispatcher
+from zaqarclient.queues.v2 import client as zaqarclient
 
 
 class EventDispatcher(dispatcher.EventDispatcherBase):
@@ -23,7 +26,8 @@ class EventDispatcher(dispatcher.EventDispatcherBase):
     def __init__(self, conf):
         self.context = context.DispatcherContext()
         self.context.conf = service.prepare_service([])
-        self.api = api.SubscriptionAPI(context)
+        self.api = api.SubscriptionAPI(self.context)
+        self.conf = conf
 
     def record_events(self, events):
         if not isinstance(events, list):
@@ -39,7 +43,24 @@ class EventDispatcher(dispatcher.EventDispatcherBase):
             ids = [trait[2] for trait in event['traits']
                    if trait[0] == 'instance_id']
             instance_id = ids[0] if ids else None
-            subscribers = api.match(project_id, event['event_type'],
-                                    instance_id)
+            subscribers = self.api.match(project_id, event['event_type'],
+                                         instance_id)
             for sub in subscribers:
-                sub.send(event)
+                self._send(sub, event)
+
+    def _send(self, subscriber, event):
+        data = json.loads(subscriber.signed_url_data)
+        opts = {
+            'paths': data['paths'],
+            'expires': data['expires'],
+            'methods': data['methods'],
+            'signature': data['signature'],
+            'os_project_id': data['project'],
+        }
+        auth_opts = {'backend': 'signed-url',
+                     'options': opts}
+        conf = {'auth_opts': auth_opts}
+        endpoint = XXX
+        client = zaqarclient.Client(url=endpoint, conf=conf, version=2)
+        queue = client.queue(subscriber.target, auto_create=False)
+        queue.post({'body': event, 'ttl': 3600})

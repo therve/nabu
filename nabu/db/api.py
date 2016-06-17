@@ -56,7 +56,8 @@ class SubscriptionAPI(object):
 
     def match(self, project_id, event_type, event_id):
         fragments = event_type.split('.')
-        fragments.append(event_id)
+        if event_id:
+            fragments.append(event_id)
         fragment_filter = []
         for index in range(len(fragments)):
             fragment_filter.append('.'.join(fragments[:index + 1]))
