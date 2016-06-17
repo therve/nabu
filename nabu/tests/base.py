@@ -30,7 +30,7 @@ class TestCase(base.BaseTestCase):
         self.context = context.Context('user_name', 'user_id', 'project',
                                        'project_id', 'domain', 'domain_id',
                                        'token', 'http://aut_url/', ['role1'],
-                                       {})
+                                       {}, {})
 
 
 class DBTestCase(TestCase):

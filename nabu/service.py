@@ -14,6 +14,7 @@
 
 import sys
 
+from keystoneauth1 import loading
 from oslo_config import cfg
 from oslo_db import options as db_options
 import oslo_i18n
@@ -39,9 +40,11 @@ def prepare_service(argv=None, config_files=None, conf=None):
     conf.register_opts(OPTS)
     log.register_options(conf)
     db_options.set_defaults(conf)
+    loading.register_auth_conf_options(conf, 'keystone_authtoken')
     conf(argv[1:], project='nabu', validate_default_values=True,
          version=nabu.__version__,
          default_config_files=config_files)
+    loading.load_auth_from_conf_options(conf, 'keystone_authtoken')
 
     log.setup(conf, 'nabu')
 

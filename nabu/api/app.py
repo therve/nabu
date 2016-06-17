@@ -57,25 +57,25 @@ class ContextHook(pecan.hooks.PecanHook):
             auth_token=auth_token,
             auth_url=auth_url,
             roles=roles,
-            auth_token_info=auth_token_info)
+            auth_token_info=auth_token_info,
+            conf=self.conf)
 
 
-def setup_app():
+def setup_app(conf):
 
     app = pecan.make_app(
         'nabu.api.controllers.root.RootController',
         use_context_locals=False,
         guess_content_type_from_ext=False,
-        hooks=[ContextHook(self.conf)])
+        hooks=[ContextHook(conf)])
     return app
 
 
 def app_factory(global_config, **local_conf):
-    return setup_app()
+    return setup_app(global_config['nabu_config'])
 
 
 def load_app(conf):
-    # Build the WSGI app
     cfg_file = None
     cfg_path = conf.api_paste_config
     if not os.path.isabs(cfg_path):
@@ -86,7 +86,8 @@ def load_app(conf):
     if not cfg_file:
         raise cfg.ConfigFilesNotFoundError([conf.api_paste_config])
     LOG.info(_LI('Full WSGI config used: %s') % cfg_file)
-    return deploy.loadapp('config:' + cfg_file)
+    return deploy.loadapp('config:' + cfg_file,
+                          global_conf={'nabu_config': conf})
 
 
 def init_application():

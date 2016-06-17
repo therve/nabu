@@ -29,7 +29,7 @@ def do_stamp(conf):
     migration.stamp(conf, conf.command.revision)
 
 
-def do_revision():
+def do_revision(conf):
     migration.revision(conf,
                        message=conf.command.message,
                        autogenerate=conf.command.autogenerate)

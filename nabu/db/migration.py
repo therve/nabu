@@ -13,24 +13,21 @@
 
 import os
 
-from alembic import config
+from alembic import context
 from oslo_db.sqlalchemy.migration_cli import manager
-
-from nabu.db import api
-from nabu import service
 
 
 def get_manager(conf):
     alembic_path = os.path.abspath(
         os.path.join(os.path.dirname(__file__), 'alembic.ini'))
-#    cfg = config.Config(alembic_path)
     migrate_path = os.path.abspath(
         os.path.join(os.path.dirname(__file__), 'alembic'))
     migration_config = {'alembic_ini_path': alembic_path,
                         'alembic_repo_path': migrate_path,
                         'db_url': conf.database.connection}
     mgr = manager.MigrationManager(migration_config)
-    mgr._plugins[0].config.conf = conf
+
+    context.nabu_config = conf
     return mgr
 
 
@@ -75,4 +72,5 @@ def revision(conf, message=None, autogenerate=False):
                          state
     :type autogenerate: bool
     """
-    return get_manager(conf).revision(message=message, autogenerate=autogenerate)
+    return get_manager(conf).revision(message=message,
+                                      autogenerate=autogenerate)

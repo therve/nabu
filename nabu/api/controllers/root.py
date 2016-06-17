@@ -17,11 +17,11 @@ from nabu.api.controllers import subscription
 
 class RootController(object):
 
-    def __init__(self, conf):
-        self.v1 = V1Controller(conf)
+    def __init__(self):
+        self.v1 = V1Controller()
 
 
 class V1Controller(object):
 
-    def __init__(self, conf):
-        self.subscription = subscription.SubscriptionRootController(conf)
+    def __init__(self):
+        self.subscription = subscription.SubscriptionRootController()

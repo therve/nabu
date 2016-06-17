@@ -28,14 +28,17 @@ class EventDispatcher(dispatcher.EventDispatcherBase):
             events = [events]
 
         for event in events:
-            ids = [trait[2] for trait in event['traits'] if trait[0] == 'project_id']
+            ids = [trait[2] for trait in event['traits']
+                   if trait[0] == 'project_id']
             if not ids:
                 # Nothing we can do with that event
                 continue
             project_id = ids[0]
-            ids = [trait[2] for trait in event['traits'] if trait[0] == 'instance_id']
+            ids = [trait[2] for trait in event['traits']
+                   if trait[0] == 'instance_id']
             instance_id = ids[0] if ids else None
             subscribers = api.subscription_match(self.context, project_id,
-                                                 event['event_type'], instance_id)
+                                                 event['event_type'],
+                                                 instance_id)
             for sub in subscribers:
                 sub.send(event)

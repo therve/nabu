@@ -63,4 +63,5 @@ class SubscriptionAPI(object):
         with self._reader() as session:
             query = session.query(models.Subscription).filter_by(
                 project_id=project_id)
-            return query.filter(models.Subscription.source.in_(fragment_filter))
+            return query.filter(
+                models.Subscription.source.in_(fragment_filter))
