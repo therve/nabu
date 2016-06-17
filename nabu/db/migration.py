@@ -15,7 +15,7 @@ import os
 
 from oslo_db.sqlalchemy.migration_cli import manager
 
-from nabu.db import backend
+from nabu.db import api
 
 
 def get_manager():
@@ -23,7 +23,7 @@ def get_manager():
         os.path.join(os.path.dirname(__file__), 'alembic.ini'))
     migrate_path = os.path.abspath(
         os.path.join(os.path.dirname(__file__), 'alembic'))
-    engine = backend.get_engine()
+    engine = api.get_engine()
     migration_config = {'alembic_ini_path': alembic_path,
                         'alembic_repo_path': migrate_path}
     return manager.MigrationManager(migration_config, engine)
