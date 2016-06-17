@@ -12,69 +12,72 @@
 # under the License.
 
 from nabu.db import api
+from nabu.db import models
 from nabu.tests import base
 
 
-class ApiTests(base.DbTestCase):
+class ApiTests(base.DBTestCase):
+
+    def setUp(self):
+        super(ApiTests, self).setUp()
+        self.sub_api = api.SubscriptionAPI(self.conf, self.context)
+        with self.sub_api._writer() as session:
+            models.Base.metadata.create_all(session.connection())
 
     def test_subscription_match(self):
-        sub = api.subscription_create(
-            self.context, {'source': 'compute', 'target': 'queue',
-                           'project_id': 'project_id', 'signed_url_data':
-                           'data'})
-        other_sub = api.subscription_create(
-            self.context, {'source': 'storage', 'target': 'queue',
-                           'project_id': 'project_id', 'signed_url_data':
-                           'data'})
+        sub = self.sub_api.create(
+            {'source': 'compute', 'target': 'queue',
+             'project_id': 'project_id', 'signed_url_data': 'data'})
+        self.sub_api.create(
+            {'source': 'storage', 'target': 'queue',
+             'project_id': 'project_id', 'signed_url_data': 'data'})
         self.assertEqual(
             sub.id,
-            api.subscription_match(self.context, 'project_id', 'compute',
-                                   'event_id').one().id)
+            self.sub_api.match('project_id', 'compute', 'event_id').one().id)
         self.assertEqual(
             sub.id,
-            api.subscription_match(self.context, 'project_id', 'compute.started',
-                                   'event_id').one().id)
+            self.sub_api.match('project_id', 'compute.started',
+                               'event_id').one().id)
         self.assertEqual(
             [],
-            api.subscription_match(self.context, 'project_id',
-                                   'network.stopped', 'event_id').all())
+            self.sub_api.match('project_id', 'network.stopped',
+                               'event_id').all())
         self.assertEqual(
             [],
-            api.subscription_match(self.context, 'project_id',
-                                   'network.stopped', 'event_id').all())
+            self.sub_api.match('project_id', 'network.stopped',
+                               'event_id').all())
         self.assertEqual(
             [],
-            api.subscription_match(self.context, 'project_id',
-                                   'network.stopped', 'event_id').all())
+            self.sub_api.match('project_id', 'network.stopped',
+                               'event_id').all())
 
     def test_subscription_match_composed(self):
-        sub = api.subscription_create(
-            self.context, {'source': 'compute.stopped', 'target': 'queue',
-                           'project_id': 'project_id', 'signed_url_data':
-                           'data'})
+        sub = self.sub_api.create(
+            {'source': 'compute.stopped', 'target': 'queue',
+             'project_id': 'project_id', 'signed_url_data': 'data'})
         self.assertEqual(
             sub.id,
-            api.subscription_match(self.context, 'project_id',
-                                   'compute.stopped', 'event_id').one().id)
+            self.sub_api.match('project_id', 'compute.stopped',
+                               'event_id').one().id)
         self.assertEqual(
             [],
-            api.subscription_match(self.context, 'project_id',
-                                   'network.stopped', 'event_id').all())
+            self.sub_api.match('project_id', 'network.stopped',
+                               'event_id').all())
         self.assertEqual(
             [],
-            api.subscription_match(self.context, 'project_id',
-                                   'network.stopped', 'event_id').all())
+            self.sub_api.match('project_id', 'network.stopped',
+                               'event_id').all())
 
     def test_subscription_match_event_id(self):
-        sub = api.subscription_create(
-            self.context, {'source': 'compute.stopped.event_id',
-                           'target': 'queue', 'project_id': 'project_id',
-                           'signed_url_data': 'data'})
+        sub = self.sub_api.create(
+            {'source': 'compute.stopped.event_id',
+             'target': 'queue', 'project_id': 'project_id',
+             'signed_url_data': 'data'})
         self.assertEqual(
             sub.id,
-            api.subscription_match(self.context, 'project_id',
-                                   'compute.stopped', 'event_id').one().id)
+            self.sub_api.match('project_id', 'compute.stopped',
+                               'event_id').one().id)
         self.assertEqual(
             [],
-            api.subscription_match(self.context, 'project_id',
-                                   'compute.started', 'event_id').all())
+            self.sub_api.match('project_id', 'compute.started',
+                               'event_id').all())

@@ -15,6 +15,7 @@
 import sys
 
 from oslo_config import cfg
+from oslo_db import options as db_options
 import oslo_i18n
 from oslo_log import log
 
@@ -23,12 +24,16 @@ import nabu
 
 def prepare_service(argv=None, config_files=None):
     oslo_i18n.enable_lazy()
-    log.register_options(cfg.CONF)
 
     if argv is None:
         argv = sys.argv
-    cfg.CONF(argv[1:], project='nabu', validate_default_values=True,
-             version=nabu.__version__,
-             default_config_files=config_files)
+    conf = cfg.ConfigOpts()
+    log.register_options(conf)
+    db_options.set_defaults(conf)
+    conf(argv[1:], project='nabu', validate_default_values=True,
+         version=nabu.__version__,
+         default_config_files=config_files)
 
-    log.setup(cfg.CONF, 'nabu')
+    log.setup(conf, 'nabu')
+
+    return conf

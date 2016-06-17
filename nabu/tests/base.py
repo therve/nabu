@@ -16,10 +16,9 @@
 # under the License.
 
 from oslotest import base
-from oslo_db.sqlalchemy import test_base
 
 from nabu import context
-from nabu.db import models
+from nabu import service
 
 
 class TestCase(base.BaseTestCase):
@@ -34,6 +33,9 @@ class TestCase(base.BaseTestCase):
                                        {})
 
 
-class DbTestCase(TestCase, test_base.DbTestCase):
-    def generate_schema(self, engine):
-        models.Base.metadata.create_all(engine)
+class DBTestCase(TestCase):
+
+    def setUp(self):
+        super(DBTestCase, self).setUp()
+        self.conf = service.prepare_service([])
+        self.conf.set_override('connection', 'sqlite://', 'database')
