@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
 # a copy of the License at
@@ -35,4 +33,6 @@ class Subscription(Base):
     source = sqlalchemy.Column(sqlalchemy.String(255), nullable=False)
     target = sqlalchemy.Column(sqlalchemy.String(255), nullable=False)
     project_id = sqlalchemy.Column(sqlalchemy.String(255), nullable=False)
+    message_ttl = sqlalchemy.Column(sqlalchemy.Integer, default=60,
+                                    nullable=False)
     signed_url_data = sqlalchemy.Column(sqlalchemy.Text, nullable=False)

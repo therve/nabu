@@ -1,4 +1,3 @@
-#
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
 # a copy of the License at
@@ -13,14 +12,14 @@
 
 """Initial migration
 
-Revision ID: 34855b6364ed
+Revision ID: a12d1154ace8
 Revises: None
-Create Date: 2016-06-03 15:47:21.394096
+Create Date: 2016-06-17 16:47:29.822508
 
 """
 
 # revision identifiers, used by Alembic.
-revision = '34855b6364ed'
+revision = 'a12d1154ace8'
 down_revision = None
 
 from alembic import op
@@ -36,6 +35,7 @@ def upgrade():
         sa.Column('source', sa.String(length=255), nullable=False),
         sa.Column('target', sa.String(length=255), nullable=False),
         sa.Column('project_id', sa.String(length=255), nullable=False),
+        sa.Column('message_ttl', sa.Integer(), nullable=False),
         sa.Column('signed_url_data', sa.Text(), nullable=False),
         sa.PrimaryKeyConstraint('id')
     )

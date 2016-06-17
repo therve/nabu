@@ -1,4 +1,3 @@
-#
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
 # a copy of the License at
@@ -46,7 +45,8 @@ def run_migrations_online(conf):
 
     """
     ctxt = nabu_context.DispatcherContext()
-    sub_api = api.SubscriptionAPI(conf, ctxt)
+    ctxt.conf = conf
+    sub_api = api.SubscriptionAPI(ctxt)
     with sub_api._writer() as session:
         connection = session.connection()
         context.configure(connection=connection,

@@ -63,4 +63,4 @@ class EventDispatcher(dispatcher.EventDispatcherBase):
         endpoint = XXX
         client = zaqarclient.Client(url=endpoint, conf=conf, version=2)
         queue = client.queue(subscriber.target, auto_create=False)
-        queue.post({'body': event, 'ttl': 3600})
+        queue.post({'body': event, 'ttl': subscriber.message_ttl})
