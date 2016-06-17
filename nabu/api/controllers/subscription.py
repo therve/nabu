@@ -23,26 +23,34 @@ from nabu.db import api
 
 class SubscriptionController(object):
 
-    def __init__(self, id):
+    def __init__(self, conf, id):
+        self.conf = conf
         self.subscription_id = id
 
     @pecan.expose(generic=True, template='json')
     def index(self, req, resp):
-        return api.subscription_get(req.context, self.subscription_id)
+        sub_api = api.SubscriptionAPI(self.conf, req.context)
+        return sub_api.get(self.subscription_id)
 
     @index.when(method='DELETE', template='json')
     def index_delete(self, req, resp):
-        return api.subscription_delete(req.context, self.subscription_id)
+        sub_api = api.SubscriptionAPI(self.conf, req.context)
+        return sub_api.delete(self.subscription_id)
 
 
 class SubscriptionRootController(object):
+
+    def __init__(self, conf):
+        self.conf = conf
+
     @pecan.expose()
     def _lookup(self, id, *remainder):
-        return SubscriptionController(id), remainder
+        return SubscriptionController(self.conf, id), remainder
 
     @pecan.expose(generic=True, template='json')
     def index(self, req, resp):
-        return api.subscription_list(req.context)
+        sub_api = api.SubscriptionAPI(self.conf, req.context)
+        return sub_api.list()
 
     @index.when(method='POST', template='json')
     def index_post(self, req, resp, **kwargs):
@@ -63,4 +71,5 @@ class SubscriptionRootController(object):
         queue = client.queue(data['target'])
         signed_url_data = queue.signed_url(['messages'], methods=['POST'])
         data['signed_url_data'] = json.dumps(signed_url_data)
-        return api.subscription_create(req.context, data)
+        sub_api = api.SubscriptionAPI(self.conf, req.context)
+        return sub_api.create(data)

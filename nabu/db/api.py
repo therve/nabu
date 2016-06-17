@@ -11,58 +11,56 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import sys
-
-from oslo_config import cfg
 from oslo_db.sqlalchemy import enginefacade
-from oslo_db.sqlalchemy import session
 
 from nabu.db import models
 
 
-def get_backend():
-    return sys.modules[__name__]
+class SubscriptionAPI(object):
 
+    def __init__(self, conf, context):
+        self._transaction = enginefacade.transaction_context()
+        self._transaction.configure(
+            **dict(conf.database.items())
+        )
+        self._context = context
 
-def get_engine():
-    facade = session.EngineFacade.from_config(cfg.CONF)
-    return facade.get_engine()
+    def _reader(self):
+        return self._transaction.reader.using(self._context)
 
+    def _writer(self):
+        return self._transaction.writer.using(self._context)
 
-@enginefacade.writer
-def subscription_create(context, values):
-    sub = models.Subscription()
-    values['project_id'] = context.project_id
-    sub.update(values)
-    context.session.add(sub)
-    return sub
+    def create(self, values):
+        with self._writer() as session:
+            sub = models.Subscription()
+            values['project_id'] = self._context.project_id
+            sub.update(values)
+            session.add(sub)
+            return sub
 
+    def list(self):
+        with self._reader() as session:
+            return session.query(models.Subscription).filter_by(
+                project_id=self._context.project_id).all()
 
-@enginefacade.reader
-def subscription_list(context):
-    return context.session.query(models.Subscription).filter_by(
-        project_id=context.project_id).all()
+    def get(self, id):
+        with self._reader() as session:
+            return session.query(models.Subscription).filter_by(
+                id=id, project_id=self._context.project_id).one()
 
+    def delete(self, id):
+        with self._writer() as session:
+            return session.query(models.Subscription).filter_by(
+                id=id, project_id=self._context.project_id).delete()
 
-@enginefacade.reader
-def subscription_get(context, id):
-    return context.session.query(models.Subscription).filter_by(
-        id=id, project_id=context.project_id).one()
-
-
-@enginefacade.writer
-def subscription_delete(context, id):
-    return context.session.query(models.Subscription).filter_by(
-        id=id, project_id=context.project_id).delete()
-
-
-@enginefacade.reader
-def subscription_match(context, project_id, event_type, event_id):
-    query = context.session.query(models.Subscription).filter_by(
-        project_id=project_id)
-    fragments = event_type.split('.')
-    fragments.append(event_id)
-    fragment_filter = []
-    for index in range(len(fragments)):
-        fragment_filter.append('.'.join(fragments[:index + 1]))
-    return query.filter(models.Subscription.source.in_(fragment_filter))
+    def match(self, project_id, event_type, event_id):
+        fragments = event_type.split('.')
+        fragments.append(event_id)
+        fragment_filter = []
+        for index in range(len(fragments)):
+            fragment_filter.append('.'.join(fragments[:index + 1]))
+        with self._reader() as session:
+            query = session.query(models.Subscription).filter_by(
+                project_id=project_id)
+            return query.filter(models.Subscription.source.in_(fragment_filter))
