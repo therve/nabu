@@ -21,13 +21,22 @@ from oslo_log import log
 
 import nabu
 
+OPTS = [
+    cfg.StrOpt('api_paste_config',
+               default='api_paste.ini',
+               help='Configuration file for WSGI definition of API.'
+               ),
+]
 
-def prepare_service(argv=None, config_files=None):
+
+def prepare_service(argv=None, config_files=None, conf=None):
     oslo_i18n.enable_lazy()
 
     if argv is None:
         argv = sys.argv
-    conf = cfg.ConfigOpts()
+    if conf is None:
+        conf = cfg.ConfigOpts()
+    conf.register_opts(OPTS)
     log.register_options(conf)
     db_options.set_defaults(conf)
     conf(argv[1:], project='nabu', validate_default_values=True,

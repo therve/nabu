@@ -26,17 +26,11 @@ from nabu import context
 LOG = log.getLogger(__name__)
 
 
-OPTS = [
-    cfg.StrOpt('api_paste_config',
-               default='api_paste.ini',
-               help='Configuration file for WSGI definition of API.'
-               ),
-]
-
-cfg.CONF.register_opts(OPTS)
-
-
 class ContextHook(pecan.hooks.PecanHook):
+
+    def __init__(self, conf):
+        super(ContextHook, self).__init__()
+        self.conf = conf
 
     def before(self, state):
         headers = state.request.headers
@@ -49,7 +43,7 @@ class ContextHook(pecan.hooks.PecanHook):
         auth_token = headers.get('X-Auth-Token')
         auth_url = headers.get('X-Auth-URL')
         if not auth_url:
-            auth_url = cfg.CONF.keystone_authtoken.auth_url
+            auth_url = self.conf.keystone_authtoken.auth_url
         roles = headers.get('X-Roles', '').split(',')
         auth_token_info = state.request.environ.get('keystone.token_info')
 
@@ -72,7 +66,7 @@ def setup_app():
         'nabu.api.controllers.root.RootController',
         use_context_locals=False,
         guess_content_type_from_ext=False,
-        hooks=[ContextHook()])
+        hooks=[ContextHook(self.conf)])
     return app
 
 
@@ -80,22 +74,22 @@ def app_factory(global_config, **local_conf):
     return setup_app()
 
 
-def load_app():
+def load_app(conf):
     # Build the WSGI app
     cfg_file = None
-    cfg_path = cfg.CONF.api_paste_config
+    cfg_path = conf.api_paste_config
     if not os.path.isabs(cfg_path):
-        cfg_file = cfg.CONF.find_file(cfg_path)
+        cfg_file = conf.find_file(cfg_path)
     elif os.path.exists(cfg_path):
         cfg_file = cfg_path
 
     if not cfg_file:
-        raise cfg.ConfigFilesNotFoundError([cfg.CONF.api_paste_config])
+        raise cfg.ConfigFilesNotFoundError([conf.api_paste_config])
     LOG.info(_LI('Full WSGI config used: %s') % cfg_file)
     return deploy.loadapp('config:' + cfg_file)
 
 
 def init_application():
     from nabu import service
-    service.prepare_service()
-    return load_app()
+    conf = service.prepare_service()
+    return load_app(conf)

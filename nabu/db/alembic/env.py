@@ -15,6 +15,7 @@ from logging import config as log_config
 from alembic import context
 
 from nabu.db import api
+from nabu import context as nabu_context
 from nabu.db import models
 
 # this is the Alembic Config object, which provides
@@ -36,19 +37,21 @@ target_metadata = models.Base.metadata
 # ... etc.
 
 
-def run_migrations_online():
+def run_migrations_online(conf):
     """Run migrations in 'online' mode.
 
     In this scenario we need to create an Engine
     and associate a connection with the context.
 
     """
-    engine = api.get_engine()
-    with engine.connect() as connection:
+    ctxt = nabu_context.DispatcherContext()
+    sub_api = api.SubscriptionAPI(conf, ctxt)
+    with sub_api._writer() as session:
+        connection = session.connection()
         context.configure(connection=connection,
                           target_metadata=target_metadata)
         with context.begin_transaction():
             context.run_migrations()
 
 
-run_migrations_online()
+run_migrations_online(config.conf)

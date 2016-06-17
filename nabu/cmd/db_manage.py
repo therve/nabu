@@ -14,26 +14,25 @@
 from oslo_config import cfg
 
 from nabu.db import migration
+from nabu import service
 
 
-CONF = cfg.CONF
+def do_version(conf):
+    print('Current DB revision is %s' % migration.version(conf))
 
 
-def do_version():
-    print('Current DB revision is %s' % migration.version())
+def do_upgrade(conf):
+    migration.upgrade(conf, conf.command.revision)
 
 
-def do_upgrade():
-    migration.upgrade(CONF.command.revision)
-
-
-def do_stamp():
-    migration.stamp(CONF.command.revision)
+def do_stamp(conf):
+    migration.stamp(conf, conf.command.revision)
 
 
 def do_revision():
-    migration.revision(message=CONF.command.message,
-                       autogenerate=CONF.command.autogenerate)
+    migration.revision(conf,
+                       message=conf.command.message,
+                       autogenerate=conf.command.autogenerate)
 
 
 def add_command_parsers(subparsers):
@@ -59,7 +58,9 @@ def main():
                                     title='Command',
                                     help='Available commands',
                                     handler=add_command_parsers)
-    CONF.register_cli_opt(command_opt)
+    conf = cfg.ConfigOpts()
+    conf.register_cli_opt(command_opt)
+    conf = service.prepare_service(conf=conf)
 
-    CONF(project='nabu')
-    CONF.command.func()
+    conf(project='nabu')
+    conf.command.func(conf)
