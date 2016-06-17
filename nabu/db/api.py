@@ -18,10 +18,10 @@ from nabu.db import models
 
 class SubscriptionAPI(object):
 
-    def __init__(self, conf, context):
+    def __init__(self, context):
         self._transaction = enginefacade.transaction_context()
         self._transaction.configure(
-            **dict(conf.database.items())
+            **dict(context.conf.database.items())
         )
         self._context = context
 

@@ -28,12 +28,12 @@ class SubscriptionController(object):
 
     @pecan.expose(generic=True, template='json')
     def index(self, req, resp):
-        sub_api = api.SubscriptionAPI(req.context.conf, req.context)
+        sub_api = api.SubscriptionAPI(req.context)
         return sub_api.get(self.subscription_id)
 
     @index.when(method='DELETE', template='json')
     def index_delete(self, req, resp):
-        sub_api = api.SubscriptionAPI(req.context.conf, req.context)
+        sub_api = api.SubscriptionAPI(req.context)
         return sub_api.delete(self.subscription_id)
 
 
@@ -45,7 +45,7 @@ class SubscriptionRootController(object):
 
     @pecan.expose(generic=True, template='json')
     def index(self, req, resp):
-        sub_api = api.SubscriptionAPI(req.context.conf, req.context)
+        sub_api = api.SubscriptionAPI(req.context)
         return sub_api.list()
 
     @index.when(method='POST', template='json')
@@ -67,5 +67,5 @@ class SubscriptionRootController(object):
         queue = client.queue(data['target'])
         signed_url_data = queue.signed_url(['messages'], methods=['POST'])
         data['signed_url_data'] = json.dumps(signed_url_data)
-        sub_api = api.SubscriptionAPI(req.context.conf, req.context)
+        sub_api = api.SubscriptionAPI(req.context)
         return sub_api.create(data)

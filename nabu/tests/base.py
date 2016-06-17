@@ -39,3 +39,4 @@ class DBTestCase(TestCase):
         super(DBTestCase, self).setUp()
         self.conf = service.prepare_service([])
         self.conf.set_override('connection', 'sqlite://', 'database')
+        self.context.conf = self.conf
