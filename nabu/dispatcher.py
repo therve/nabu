@@ -12,12 +12,14 @@
 
 import json
 
+from ceilometer import dispatcher
+from keystoneauth1.identity.generic import password
+from keystoneclient import session
+from zaqarclient.queues.v2 import client as zaqarclient
+
 from nabu import context
 from nabu.db import api
 from nabu import service
-
-from ceilometer import dispatcher
-from zaqarclient.queues.v2 import client as zaqarclient
 
 
 class EventDispatcher(dispatcher.EventDispatcherBase):
@@ -27,6 +29,20 @@ class EventDispatcher(dispatcher.EventDispatcherBase):
         self.context.conf = service.prepare_service([])
         self.api = api.SubscriptionAPI(self.context)
         self.conf = conf
+        self._endpoint = None
+
+    @property
+    def endpoint(self):
+        if self._endpoint is not None:
+            return self._endpoint
+        conf = self.context.conf.keystone_authtoken
+        auth_plugin = password.Password(
+            username=conf.username,
+            password=conf.password,
+            auth_url=conf.auth_url,
+            project_name=conf.project_name)
+        sess = session.Session(auth=auth_plugin)
+        return sess.get_endpoint(service_type='messaging')
 
     def record_events(self, events):
         if not isinstance(events, list):
@@ -59,7 +75,6 @@ class EventDispatcher(dispatcher.EventDispatcherBase):
         auth_opts = {'backend': 'signed-url',
                      'options': opts}
         conf = {'auth_opts': auth_opts}
-        endpoint = XXX
-        client = zaqarclient.Client(url=endpoint, conf=conf, version=2)
+        client = zaqarclient.Client(url=self.endpoint, conf=conf, version=2)
         queue = client.queue(subscriber.target, auto_create=False)
         queue.post({'body': event, 'ttl': subscriber.message_ttl})
