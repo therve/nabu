@@ -37,4 +37,4 @@ class Context(context.RequestContext):
 
 @enginefacade.transaction_context_provider
 class DispatcherContext(object):
-    pass
+    conf = None

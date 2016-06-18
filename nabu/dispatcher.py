@@ -14,7 +14,7 @@ import json
 
 from ceilometer import dispatcher
 from keystoneauth1.identity.generic import password
-from keystoneclient import session
+from keystoneauth1 import session
 from zaqarclient.queues.v2 import client as zaqarclient
 
 from nabu import context
@@ -33,16 +33,16 @@ class EventDispatcher(dispatcher.EventDispatcherBase):
 
     @property
     def endpoint(self):
-        if self._endpoint is not None:
-            return self._endpoint
-        conf = self.context.conf.keystone_authtoken
-        auth_plugin = password.Password(
-            username=conf.username,
-            password=conf.password,
-            auth_url=conf.auth_url,
-            project_name=conf.project_name)
-        sess = session.Session(auth=auth_plugin)
-        return sess.get_endpoint(service_type='messaging')
+        if self._endpoint is None:
+            conf = self.context.conf.keystone_authtoken
+            auth_plugin = password.Password(
+                username=conf.username,
+                password=conf.password,
+                auth_url=conf.auth_url,
+                project_name=conf.project_name)
+            sess = session.Session(auth=auth_plugin)
+            self._endpoint = sess.get_endpoint(service_type='messaging')
+        return self._endpoint
 
     def record_events(self, events):
         if not isinstance(events, list):
@@ -51,13 +51,13 @@ class EventDispatcher(dispatcher.EventDispatcherBase):
         for event in events:
             ids = [trait[2] for trait in event['traits']
                    if trait[0] == 'project_id']
-            if not ids:
+            if len(ids) != 1:
                 # Nothing we can do with that event
                 continue
             project_id = ids[0]
             ids = [trait[2] for trait in event['traits']
                    if trait[0] == 'instance_id']
-            instance_id = ids[0] if ids else None
+            instance_id = ids[0] if len(ids) == 1 else None
             subscribers = self.api.match(project_id, event['event_type'],
                                          instance_id)
             for sub in subscribers:

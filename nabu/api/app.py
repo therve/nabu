@@ -20,6 +20,7 @@ from oslo_log import log
 
 from nabu._i18n import _LI
 from nabu import context
+from nabu import service
 
 
 LOG = log.getLogger(__name__)
@@ -90,6 +91,5 @@ def load_app(conf):
 
 
 def init_application():
-    from nabu import service
     conf = service.prepare_service()
     return load_app(conf)
