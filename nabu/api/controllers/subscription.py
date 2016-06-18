@@ -12,11 +12,35 @@
 
 import json
 
+from jsonschema import validate
 import pecan
-
 from zaqarclient.queues.v2 import client as zaqarclient
 
 from nabu.db import api
+
+
+subscription_schema = {
+    "title": "Subscription",
+    "description": "A subscription to notifications",
+    "type": "object",
+    "properties": {
+        "source": {
+            "description": "The filter for event to subscribe to",
+            "type": "string"
+        },
+        "target": {
+            "description":
+                "The name of the Zaqar queue to send matching events",
+            "type": "string"
+        },
+        "message_ttl": {
+            "description": "The TTL of the messages pushed to the queue",
+            "minimum": 0,
+            "type": "integer"
+        }
+    },
+    "required": ["source", "target"]
+}
 
 
 class SubscriptionController(object):
@@ -48,6 +72,8 @@ class SubscriptionRootController(object):
 
     @index.when(method='POST', template='json')
     def index_post(self, req, resp, **kwargs):
+        data = req.json
+        validate(data, subscription_schema)
         opts = {
             'os_auth_token': req.context.auth_token,
             'os_auth_url': req.context.auth_url,
@@ -61,7 +87,6 @@ class SubscriptionRootController(object):
             None, 'messaging')
 
         client = zaqarclient.Client(url=endpoint, conf=conf, version=2.0)
-        data = req.json
         queue = client.queue(data['target'])
         signed_url_data = queue.signed_url(['messages'], methods=['POST'])
         data['signed_url_data'] = json.dumps(signed_url_data)
