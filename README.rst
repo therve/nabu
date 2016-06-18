@@ -1,5 +1,5 @@
 ====
-nabu
+Nabu
 ====
 
 OpenStack event subscriber
