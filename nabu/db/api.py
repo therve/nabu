@@ -44,7 +44,7 @@ class SubscriptionAPI(object):
     def list(self):
         with self._reader() as session:
             return session.query(models.Subscription).filter_by(
-                project_id=self._context.project_id).all()
+                project_id=self._context.project_id)
 
     def get(self, id):
         try:

@@ -54,6 +54,19 @@ class ApiTests(base.DBTestCase):
         self.context.project_id = 'other_project'
         self.assertRaises(exceptions.NotFound, self.sub_api.get, sub.id)
 
+    def test_subscription_list(self):
+        sub = self.sub_api.create(
+            {'source': 'compute', 'target': 'queue',
+             'signed_url_data': 'data'})
+        other = self.sub_api.create(
+            {'source': 'storage', 'target': 'queue',
+             'signed_url_data': 'data'})
+        result = [s.items() for s in self.sub_api.list()]
+        result.sort()
+        expected = [sub.items(), other.items()]
+        expected.sort()
+        self.assertEqual(expected, result)
+
     def test_subscription_delete(self):
         sub = self.sub_api.create(
             {'source': 'compute', 'target': 'queue',
