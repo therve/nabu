@@ -61,11 +61,30 @@ class ApiTests(base.DBTestCase):
         other = self.sub_api.create(
             {'source': 'storage', 'target': 'queue',
              'signed_url_data': 'data'})
-        result = [s.items() for s in self.sub_api.list()]
+        result = [s.items() for s in self.sub_api.list(10, None)]
         result.sort()
         expected = [sub.items(), other.items()]
         expected.sort()
         self.assertEqual(expected, result)
+
+    def test_subscription_list_marker(self):
+        sub = self.sub_api.create(
+            {'source': 'compute', 'target': 'queue',
+             'signed_url_data': 'data'})
+        other = self.sub_api.create(
+            {'source': 'storage', 'target': 'queue',
+             'signed_url_data': 'data'})
+        result = self.sub_api.list(1, None).one()
+        self.assertIn(result.items(), [sub.items(), other.items()])
+        following_result = self.sub_api.list(10, result.id).one().items()
+        self.assertIn(following_result, [sub.items(), other.items()])
+        self.assertNotEqual(following_result, result.items())
+
+    def test_subscription_list_wrong_marker(self):
+        sub = self.sub_api.create(
+            {'source': 'compute', 'target': 'queue',
+             'signed_url_data': 'data'})
+        self.assertEqual([], self.sub_api.list(10, 'unknown'))
 
     def test_subscription_delete(self):
         sub = self.sub_api.create(
@@ -116,7 +135,7 @@ class ApiTests(base.DBTestCase):
                                'event_id').all())
 
     def test_subscription_match_wrong_project(self):
-        sub = self.sub_api.create(
+        self.sub_api.create(
             {'source': 'compute', 'target': 'queue',
              'signed_url_data': 'data'})
         self.assertEqual(

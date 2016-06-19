@@ -13,6 +13,7 @@
 from sqlalchemy.orm import exc
 
 from oslo_db.sqlalchemy import enginefacade
+from oslo_db.sqlalchemy import utils
 
 from nabu.db import models
 from nabu import exceptions
@@ -41,10 +42,17 @@ class SubscriptionAPI(object):
             session.add(sub)
             return sub
 
-    def list(self):
+    def list(self, limit, marker):
         with self._reader() as session:
-            return session.query(models.Subscription).filter_by(
+            query = session.query(models.Subscription).filter_by(
                 project_id=self._context.project_id)
+            if marker is not None:
+                try:
+                    marker = self.get(marker)
+                except exceptions.NotFound:
+                    return []
+            return utils.paginate_query(query, models.Subscription, limit,
+                                        ['id'], marker)
 
     def get(self, id):
         try:

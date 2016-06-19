@@ -61,14 +61,21 @@ class SubscriptionController(object):
 
 class SubscriptionRootController(object):
 
+    DEFAULT_LIMIT = 10
+    MAX_LIMIT = 100
+
     @pecan.expose()
     def _lookup(self, id, *remainder):
         return SubscriptionController(id), remainder
 
     @pecan.expose(generic=True, template='json')
-    def index(self, req, resp):
+    def index(self, req, resp, limit=None, marker=None):
         sub_api = api.SubscriptionAPI(req.context)
-        return sub_api.list()
+        if limit is None:
+            limit = self.DEFAULT_LIMIT
+        if 0 < limit <= self.MAX_LIMIT:
+            raise ValueError("Limit must be between 0 and %d" % self.MAX_LIMIT)
+        return sub_api.list(limit, marker)
 
     @index.when(method='POST', template='json')
     def index_post(self, req, resp, **kwargs):
