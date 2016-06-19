@@ -12,6 +12,7 @@
 
 from nabu.db import api
 from nabu.db import models
+from nabu import exceptions
 from nabu.tests import base
 
 
@@ -23,13 +24,64 @@ class ApiTests(base.DBTestCase):
         with self.sub_api._writer() as session:
             models.Base.metadata.create_all(session.connection())
 
+    def test_subscription_create(self):
+        sub = self.sub_api.create(
+            {'source': 'compute', 'target': 'queue',
+             'signed_url_data': 'data'})
+        self.assertEqual('project_id', sub.project_id)
+        self.assertEqual('queue', sub.target)
+        self.assertEqual('compute', sub.source)
+        self.assertEqual('data', sub.signed_url_data)
+        self.assertEqual(60, sub.message_ttl)
+
+    def test_subscription_get(self):
+        sub = self.sub_api.create(
+            {'source': 'compute', 'target': 'queue',
+             'signed_url_data': 'data'})
+        other = self.sub_api.get(sub.id)
+        self.assertEqual('project_id', other.project_id)
+        self.assertEqual('queue', other.target)
+        self.assertEqual('compute', other.source)
+        self.assertEqual('data', other.signed_url_data)
+
+    def test_subscription_get_wrong_id(self):
+        self.assertRaises(exceptions.NotFound, self.sub_api.get, 'unknown')
+
+    def test_subscription_get_wrong_project(self):
+        sub = self.sub_api.create(
+            {'source': 'compute', 'target': 'queue',
+             'signed_url_data': 'data'})
+        self.context.project_id = 'other_project'
+        self.assertRaises(exceptions.NotFound, self.sub_api.get, sub.id)
+
+    def test_subscription_delete(self):
+        sub = self.sub_api.create(
+            {'source': 'compute', 'target': 'queue',
+             'signed_url_data': 'data'})
+        data = self.sub_api.delete(sub.id)
+        self.assertEqual(1, data)
+        self.assertRaises(exceptions.NotFound, self.sub_api.get, sub.id)
+
+    def test_subscription_delete_wrong_id(self):
+        self.assertEqual(0, self.sub_api.delete('unknown'))
+
+    def test_subscription_delete_wrong_project(self):
+        sub = self.sub_api.create(
+            {'source': 'compute', 'target': 'queue',
+             'signed_url_data': 'data'})
+        self.context.project_id = 'other_project'
+        self.sub_api.delete(sub.id)
+        self.context.project_id = 'project_id'
+        other = self.sub_api.get(sub.id)
+        self.assertEqual(other.id, sub.id)
+
     def test_subscription_match(self):
         sub = self.sub_api.create(
             {'source': 'compute', 'target': 'queue',
-             'project_id': 'project_id', 'signed_url_data': 'data'})
+             'signed_url_data': 'data'})
         self.sub_api.create(
             {'source': 'storage', 'target': 'queue',
-             'project_id': 'project_id', 'signed_url_data': 'data'})
+             'signed_url_data': 'data'})
         self.assertEqual(
             sub.id,
             self.sub_api.match('project_id', 'compute', 'event_id').one().id)
@@ -50,10 +102,18 @@ class ApiTests(base.DBTestCase):
             self.sub_api.match('project_id', 'network.stopped',
                                'event_id').all())
 
+    def test_subscription_match_wrong_project(self):
+        sub = self.sub_api.create(
+            {'source': 'compute', 'target': 'queue',
+             'signed_url_data': 'data'})
+        self.assertEqual(
+            [],
+            self.sub_api.match('other_project', 'compute', 'event_id').all())
+
     def test_subscription_match_composed(self):
         sub = self.sub_api.create(
             {'source': 'compute.stopped', 'target': 'queue',
-             'project_id': 'project_id', 'signed_url_data': 'data'})
+             'signed_url_data': 'data'})
         self.assertEqual(
             sub.id,
             self.sub_api.match('project_id', 'compute.stopped',
@@ -69,8 +129,7 @@ class ApiTests(base.DBTestCase):
 
     def test_subscription_match_event_id(self):
         sub = self.sub_api.create(
-            {'source': 'compute.stopped.event_id',
-             'target': 'queue', 'project_id': 'project_id',
+            {'source': 'compute.stopped.event_id', 'target': 'queue',
              'signed_url_data': 'data'})
         self.assertEqual(
             sub.id,

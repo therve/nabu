@@ -10,9 +10,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from sqlalchemy.orm import exc
+
 from oslo_db.sqlalchemy import enginefacade
 
 from nabu.db import models
+from nabu import exceptions
 
 
 class SubscriptionAPI(object):
@@ -44,9 +47,12 @@ class SubscriptionAPI(object):
                 project_id=self._context.project_id).all()
 
     def get(self, id):
-        with self._reader() as session:
-            return session.query(models.Subscription).filter_by(
-                id=id, project_id=self._context.project_id).one()
+        try:
+            with self._reader() as session:
+                return session.query(models.Subscription).filter_by(
+                    id=id, project_id=self._context.project_id).one()
+        except exc.NoResultFound:
+            raise exceptions.NotFound()
 
     def delete(self, id):
         with self._writer() as session:
