@@ -10,13 +10,14 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import json
+from oslo_serialization import jsonutils
 
-from jsonschema import validate
-import pecan
+import falcon
+import jsonschema
 from zaqarclient.queues.v2 import client as zaqarclient
 
 from nabu.db import api
+from nabu import exceptions
 
 
 subscription_schema = {
@@ -45,18 +46,19 @@ subscription_schema = {
 
 class SubscriptionController(object):
 
-    def __init__(self, id):
-        self.subscription_id = id
-
-    @pecan.expose(generic=True, template='json')
-    def index(self, req, resp):
+    def on_get(self, req, resp, id):
         sub_api = api.SubscriptionAPI(req.context)
-        return sub_api.get(self.subscription_id)
+        try:
+            sub = sub_api.get(id)
+        except exceptions.NotFound:
+            resp.status = falcon.HTTP_404
+        else:
+            resp.body = jsonutils.dumps(sub)
 
-    @index.when(method='DELETE', template='json')
-    def index_delete(self, req, resp):
+    def on_delete(self, req, resp, id):
         sub_api = api.SubscriptionAPI(req.context)
-        return sub_api.delete(self.subscription_id)
+        sub_api.delete(id)
+        resp.status = falcon.HTTP_204
 
 
 class SubscriptionRootController(object):
@@ -64,23 +66,23 @@ class SubscriptionRootController(object):
     DEFAULT_LIMIT = 10
     MAX_LIMIT = 100
 
-    @pecan.expose()
-    def _lookup(self, id, *remainder):
-        return SubscriptionController(id), remainder
-
-    @pecan.expose(generic=True, template='json')
-    def index(self, req, resp, limit=None, marker=None):
+    def on_get(self, req, resp):
+        marker = req.get_param('marker')
+        limit = req.get_param_as_int('limit', min=0, max=self.MAX_LIMIT)
         sub_api = api.SubscriptionAPI(req.context)
         if limit is None:
             limit = self.DEFAULT_LIMIT
-        if 0 < limit <= self.MAX_LIMIT:
-            raise ValueError("Limit must be between 0 and %d" % self.MAX_LIMIT)
-        return sub_api.list(limit, marker)
+        data = [sub.items() for sub in sub_api.list(limit, marker)]
+        resp.body = jsonutils.dumps({'subscriptions': data})
 
-    @index.when(method='POST', template='json')
-    def index_post(self, req, resp, **kwargs):
-        data = req.json
-        validate(data, subscription_schema)
+    def on_post(self, req, resp):
+        data = jsonutils.loads(req.stream.read())
+        try:
+            jsonschema.validate(data, subscription_schema)
+        except jsonschema.ValidationError as e:
+            resp.status = falcon.HTTP_400
+            resp.body = str(e)
+            return
         opts = {
             'os_auth_token': req.context.auth_token,
             'os_auth_url': req.context.auth_url,
@@ -90,12 +92,13 @@ class SubscriptionRootController(object):
         auth_opts = {'backend': 'keystone', 'options': opts}
         conf = {'auth_opts': auth_opts}
 
-        endpoint = req.environ['keystone.token_auth'].get_endpoint(
+        endpoint = req.env['keystone.token_auth'].get_endpoint(
             None, 'messaging')
 
         client = zaqarclient.Client(url=endpoint, conf=conf, version=2.0)
         queue = client.queue(data['target'])
         signed_url_data = queue.signed_url(['messages'], methods=['POST'])
-        data['signed_url_data'] = json.dumps(signed_url_data)
+        data['signed_url_data'] = jsonutils.dumps(signed_url_data)
         sub_api = api.SubscriptionAPI(req.context)
-        return sub_api.create(data)
+        resp.body = jsonutils.dumps(sub_api.create(data).items())
+        resp.status = falcon.HTTP_201

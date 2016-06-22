@@ -2,6 +2,7 @@
 # of appearance. Changing the order has an impact on the overall integration
 # process, which may cause wedges in the gate later.
 
+falcon
 jsonschema
 oslo.config
 oslo.context
@@ -11,4 +12,3 @@ oslo.middleware
 keystonemiddleware
 PasteDeploy
 pbr>=1.6
-pecan

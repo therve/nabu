@@ -12,13 +12,14 @@
 
 import os
 
+import falcon
 from paste import deploy
-import pecan
 
 from oslo_config import cfg
 from oslo_log import log
 
 from nabu._i18n import _LI
+from nabu.api.controllers import subscription
 from nabu import context
 from nabu import service
 
@@ -26,28 +27,27 @@ from nabu import service
 LOG = log.getLogger(__name__)
 
 
-class ContextHook(pecan.hooks.PecanHook):
+class ContextMiddleware(object):
 
     def __init__(self, conf):
-        super(ContextHook, self).__init__()
         self.conf = conf
 
-    def before(self, state):
-        headers = state.request.headers
-        user_name = headers.get('X-User-Name')
-        user_id = headers.get('X-User-Id')
-        project = headers.get('X-Project-Name')
-        project_id = headers.get('X-Project-Id')
-        domain_id = headers.get('X-User-Domain-Id')
-        domain_name = headers.get('X-User-Domain-Name')
-        auth_token = headers.get('X-Auth-Token')
-        auth_url = headers.get('X-Auth-URL')
+    def process_resource(self, request, response, resource, params):
+        headers = request.headers
+        user_name = headers.get('X-USER-NAME')
+        user_id = headers.get('X-USER-ID')
+        project = headers.get('X-PROJECT-NAME')
+        project_id = headers.get('X-PROJECT-ID')
+        domain_id = headers.get('X-USER-DOMAIN-ID')
+        domain_name = headers.get('X-USER-DOMAIN-NAME')
+        auth_token = headers.get('X-AUTH-TOKEN')
+        auth_url = headers.get('X-AUTH-URL')
         if not auth_url:
             auth_url = self.conf.keystone_authtoken.auth_url
-        roles = headers.get('X-Roles', '').split(',')
-        auth_token_info = state.request.environ.get('keystone.token_info')
+        roles = headers.get('X-ROLES', '').split(',')
+        auth_token_info = request.env.get('keystone.token_info')
 
-        state.request.context = context.Context(
+        request.context = context.Context(
             user_name=user_name,
             user_id=user_id,
             project=project,
@@ -62,12 +62,11 @@ class ContextHook(pecan.hooks.PecanHook):
 
 
 def setup_app(conf):
-
-    app = pecan.make_app(
-        'nabu.api.controllers.root.RootController',
-        use_context_locals=False,
-        guess_content_type_from_ext=False,
-        hooks=[ContextHook(conf)])
+    app = falcon.API(middleware=[ContextMiddleware(conf)])
+    app.add_route('/v1/subscription',
+                  subscription.SubscriptionRootController())
+    app.add_route('/v1/subscription/{id}',
+                  subscription.SubscriptionController())
     return app
 
 

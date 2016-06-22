@@ -81,7 +81,7 @@ class ApiTests(base.DBTestCase):
         self.assertNotEqual(following_result, result.items())
 
     def test_subscription_list_wrong_marker(self):
-        sub = self.sub_api.create(
+        self.sub_api.create(
             {'source': 'compute', 'target': 'queue',
              'signed_url_data': 'data'})
         self.assertEqual([], self.sub_api.list(10, 'unknown'))
