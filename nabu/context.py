@@ -19,14 +19,11 @@ from oslo_db.sqlalchemy import enginefacade
 class Context(context.RequestContext):
 
     def __init__(self, user_name, user_id, project, project_id, domain_name,
-                 domain_id, auth_token, auth_url, roles, auth_token_info,
-                 conf):
+                 domain_id, auth_token, auth_url, roles):
         self.project_id = project_id
         self.user_id = user_id
         self.domain_id = domain_id
         self.auth_url = auth_url
-        self.auth_token_info = auth_token_info
-        self.conf = conf
         super(Context, self).__init__(
             auth_token=auth_token,
             user=user_name,
@@ -37,4 +34,4 @@ class Context(context.RequestContext):
 
 @enginefacade.transaction_context_provider
 class DispatcherContext(object):
-    conf = None
+    pass

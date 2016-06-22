@@ -10,10 +10,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from oslo_serialization import jsonutils
 
 import falcon
 import jsonschema
+from oslo_serialization import jsonutils
 from zaqarclient.queues.v2 import client as zaqarclient
 
 from nabu.db import api
@@ -46,8 +46,11 @@ subscription_schema = {
 
 class SubscriptionController(object):
 
+    def __init__(self, conf):
+        self.conf = conf
+
     def on_get(self, req, resp, id):
-        sub_api = api.SubscriptionAPI(req.context)
+        sub_api = api.SubscriptionAPI(req.context, self.conf)
         try:
             sub = sub_api.get(id)
         except exceptions.NotFound:
@@ -56,7 +59,7 @@ class SubscriptionController(object):
             resp.body = jsonutils.dumps(sub)
 
     def on_delete(self, req, resp, id):
-        sub_api = api.SubscriptionAPI(req.context)
+        sub_api = api.SubscriptionAPI(req.context, self.conf)
         sub_api.delete(id)
         resp.status = falcon.HTTP_204
 
@@ -66,10 +69,13 @@ class SubscriptionRootController(object):
     DEFAULT_LIMIT = 10
     MAX_LIMIT = 100
 
+    def __init__(self, conf):
+        self.conf = conf
+
     def on_get(self, req, resp):
         marker = req.get_param('marker')
         limit = req.get_param_as_int('limit', min=0, max=self.MAX_LIMIT)
-        sub_api = api.SubscriptionAPI(req.context)
+        sub_api = api.SubscriptionAPI(req.context, self.conf)
         if limit is None:
             limit = self.DEFAULT_LIMIT
         data = [sub.items() for sub in sub_api.list(limit, marker)]
@@ -99,6 +105,6 @@ class SubscriptionRootController(object):
         queue = client.queue(data['target'])
         signed_url_data = queue.signed_url(['messages'], methods=['POST'])
         data['signed_url_data'] = jsonutils.dumps(signed_url_data)
-        sub_api = api.SubscriptionAPI(req.context)
+        sub_api = api.SubscriptionAPI(req.context, self.conf)
         resp.body = jsonutils.dumps(sub_api.create(data).items())
         resp.status = falcon.HTTP_201

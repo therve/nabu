@@ -26,15 +26,15 @@ class EventDispatcher(dispatcher.EventDispatcherBase):
 
     def __init__(self, conf):
         self.context = context.DispatcherContext()
-        self.context.conf = service.prepare_service([])
-        self.api = api.SubscriptionAPI(self.context)
+        self.nabu_conf = service.prepare_service([])
+        self.api = api.SubscriptionAPI(self.context, self.nabu_conf)
         self.conf = conf
         self._endpoint = None
 
     @property
     def endpoint(self):
         if self._endpoint is None:
-            conf = self.context.conf.keystone_authtoken
+            conf = self.nabu_conf.keystone_authtoken
             auth_plugin = password.Password(
                 username=conf.username,
                 password=conf.password,

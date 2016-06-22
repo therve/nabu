@@ -20,7 +20,7 @@ class ApiTests(base.DBTestCase):
 
     def setUp(self):
         super(ApiTests, self).setUp()
-        self.sub_api = api.SubscriptionAPI(self.context)
+        self.sub_api = api.SubscriptionAPI(self.context, self.conf)
         with self.sub_api._writer() as session:
             models.Base.metadata.create_all(session.connection())
 

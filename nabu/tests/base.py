@@ -24,8 +24,7 @@ class TestCase(base.BaseTestCase):
         super(TestCase, self).setUp()
         self.context = context.Context('user_name', 'user_id', 'project',
                                        'project_id', 'domain', 'domain_id',
-                                       'token', 'http://aut_url/', ['role1'],
-                                       {}, {})
+                                       'token', 'http://auth_url/', ['role1'])
 
 
 class DBTestCase(TestCase):
@@ -34,4 +33,3 @@ class DBTestCase(TestCase):
         super(DBTestCase, self).setUp()
         self.conf = service.prepare_service([])
         self.conf.set_override('connection', 'sqlite://', 'database')
-        self.context.conf = self.conf

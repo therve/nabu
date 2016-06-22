@@ -21,10 +21,10 @@ from nabu import exceptions
 
 class SubscriptionAPI(object):
 
-    def __init__(self, context):
+    def __init__(self, context, conf):
         self._transaction = enginefacade.transaction_context()
         self._transaction.configure(
-            **dict(context.conf.database.items())
+            **dict(conf.database.items())
         )
         self._context = context
 

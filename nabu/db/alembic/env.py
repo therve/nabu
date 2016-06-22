@@ -45,8 +45,7 @@ def run_migrations_online(conf):
 
     """
     ctxt = nabu_context.DispatcherContext()
-    ctxt.conf = conf
-    sub_api = api.SubscriptionAPI(ctxt)
+    sub_api = api.SubscriptionAPI(ctxt, conf)
     with sub_api._writer() as session:
         connection = session.connection()
         context.configure(connection=connection,
