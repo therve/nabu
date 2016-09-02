@@ -34,4 +34,4 @@ class Context(context.RequestContext):
 
 @enginefacade.transaction_context_provider
 class DispatcherContext(object):
-    pass
+    """Straightforward context to be used in the dispatcher."""

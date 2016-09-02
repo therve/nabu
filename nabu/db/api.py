@@ -20,6 +20,7 @@ from nabu import exceptions
 
 
 class SubscriptionAPI(object):
+    """Wrapper class for database access to the subscription table."""
 
     def __init__(self, context, conf):
         self._transaction = enginefacade.transaction_context()
@@ -35,6 +36,7 @@ class SubscriptionAPI(object):
         return self._transaction.writer.using(self._context)
 
     def create(self, values):
+        """Create a new subscription."""
         with self._writer() as session:
             sub = models.Subscription()
             values['project_id'] = self._context.project_id
@@ -43,6 +45,7 @@ class SubscriptionAPI(object):
             return sub
 
     def list(self, limit, marker):
+        """List subscriptions."""
         with self._reader() as session:
             query = session.query(models.Subscription).filter_by(
                 project_id=self._context.project_id)
@@ -55,6 +58,7 @@ class SubscriptionAPI(object):
                                         ['id'], marker)
 
     def get(self, id):
+        """Retrieve a subscription by ID."""
         try:
             with self._reader() as session:
                 return session.query(models.Subscription).filter_by(
@@ -63,6 +67,7 @@ class SubscriptionAPI(object):
             raise exceptions.NotFound()
 
     def delete(self, id):
+        """Delete a subscription by ID."""
         with self._writer() as session:
             return session.query(models.Subscription).filter_by(
                 id=id, project_id=self._context.project_id).delete()

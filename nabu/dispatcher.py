@@ -12,7 +12,6 @@
 
 import json
 
-from ceilometer import dispatcher
 from keystoneauth1.identity.generic import password
 from keystoneauth1 import session
 from zaqarclient.queues.v2 import client as zaqarclient
@@ -22,13 +21,22 @@ from nabu.db import api
 from nabu import service
 
 
-class EventDispatcher(dispatcher.EventDispatcherBase):
+class EventDispatcher(object):
+    """Dispatcher class to send event to Zaqar.
 
+    This dispatcher looks up for subscriptions in the Nabu database, and send
+    matching events to the configured Zaqar queue.
+
+    To enable this dispatcher, the following section needs to be present in
+    ceilometer.conf file
+
+    [DEFAULT]
+    event_dispatchers = nabu
+    """
     def __init__(self, conf):
         self.context = context.DispatcherContext()
         self.nabu_conf = service.prepare_service([])
         self.api = api.SubscriptionAPI(self.context, self.nabu_conf)
-        self.conf = conf
         self._endpoint = None
 
     @property
@@ -64,6 +72,7 @@ class EventDispatcher(dispatcher.EventDispatcherBase):
                 self._send(sub, event)
 
     def _send(self, subscriber, event):
+        """Send event data to the given subscriber using Zaqar."""
         data = json.loads(subscriber.signed_url_data)
         opts = {
             'paths': data['paths'],
