@@ -31,7 +31,7 @@ function init_nabu {
 }
 
 function start_nabu {
-    run_process nabu-api "$NABU_BIN_DIR/nabu-wsgi-api --config-file=$NABU_CONF"
+    run_process nabu-api "$NABU_BIN_DIR/nabu-wsgi-api --port $NABU_SERVICE_PORT -- --config-file=$NABU_CONF"
 }
 
 function stop_nabu {
