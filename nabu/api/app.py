@@ -28,6 +28,9 @@ LOG = log.getLogger(__name__)
 
 class ContextMiddleware(object):
 
+    def __init__(self, conf):
+        self.conf = conf
+
     def process_resource(self, request, response, resource, params):
         headers = request.headers
         user_name = headers.get('X-USER-NAME')
@@ -55,7 +58,7 @@ class ContextMiddleware(object):
 
 
 def setup_app(conf):
-    app = falcon.API(middleware=[ContextMiddleware()])
+    app = falcon.API(middleware=[ContextMiddleware(conf)])
     app.add_route('/v1/subscription',
                   subscription.SubscriptionRootController(conf))
     app.add_route('/v1/subscription/{id}',
