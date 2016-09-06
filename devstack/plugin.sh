@@ -13,6 +13,8 @@ function configure_nabu {
 
     configure_auth_token_middleware $NABU_CONF nabu $NABU_AUTH_CACHE_DIR
 
+    iniset $NABU_CONF database connection $(database_connection_url nabu)
+
     if is_service_enabled ceilometer-collector; then
         iniset $CEILOMETER_CONF DEFAULT event_dispatchers nabu
     fi
@@ -87,6 +89,6 @@ if is_service_enabled nabu-api; then
     if [[ "$1" == "clean" ]]; then
         # Remove state and transient data
         # Remember clean.sh first calls unstack.sh
-	echo_summary "Cleanup nabu"
+        echo_summary "Cleanup nabu"
     fi
 fi
