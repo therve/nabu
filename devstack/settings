@@ -3,6 +3,7 @@ NABU_DIR=$DEST/nabu
 NABU_CONF_DIR=/etc/nabu
 NABU_CONF=$NABU_CONF_DIR/nabu.conf
 NABU_API_PASTE_FILE=$NABU_CONF_DIR/api_paste.ini
+NABU_AUTH_CACHE_DIR=${NABU_AUTH_CACHE_DIR:-/var/cache/nabu}
 
 NABU_BIN_DIR=$(get_python_exec_prefix)
 

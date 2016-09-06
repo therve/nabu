@@ -3,11 +3,15 @@
 function install_nabu {
     # Install the service.
     setup_develop $NABU_DIR
+
+    sudo install -d -o $STACK_USER -m 755 $NABU_CONF_DIR
 }
 
 function configure_nabu {
     # Configure the service.
     cp $NABU_DIR/etc/nabu/api_paste.ini $NABU_API_PASTE_FILE
+
+    configure_auth_token_middleware $NABU_CONF nabu $NABU_AUTH_CACHE_DIR
 
     if is_service_enabled ceilometer-collector; then
         iniset $CEILOMETER_CONF DEFAULT event_dispatchers nabu
@@ -16,8 +20,10 @@ function configure_nabu {
 
 function init_nabu {
     create_nabu_accounts
-    # Initialize and start the service.
     recreate_database nabu
+
+    sudo install -d -o $STACK_USER $NABU_AUTH_CACHE_DIR
+    rm -f $NABU_AUTH_CACHE_DIR/*
 
     $NABU_BIN_DIR/nabu-manage upgrade
 }
