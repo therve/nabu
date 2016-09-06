@@ -1,6 +1,6 @@
-========
+=====
 Usage
-========
+=====
 
 To use nabu in a project::
 
