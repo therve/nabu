@@ -1,5 +1,5 @@
 # check for service enabled
-if is_service_enabled nabu; then
+if is_service_enabled nabu-api; then
     if [[ "$1" == "source" ]]; then
         # Initial source of lib script
         source $(dirname "$0")/lib/nabu
