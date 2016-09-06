@@ -7,7 +7,7 @@ function install_nabu {
 
 function configure_nabu {
     # Configure the service.
-    cp $NABU_DIR/etc/nabu/api-paste.ini $NABU_API_PASTE_FILE
+    cp $NABU_DIR/etc/nabu/api_paste.ini $NABU_API_PASTE_FILE
 
     if is_service_enabled ceilometer-collector; then
         iniset $CEILOMETER_CONF DEFAULT event_dispatchers nabu
