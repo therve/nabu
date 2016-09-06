@@ -25,7 +25,7 @@ function init_nabu {
     sudo install -d -o $STACK_USER $NABU_AUTH_CACHE_DIR
     rm -f $NABU_AUTH_CACHE_DIR/*
 
-    $NABU_BIN_DIR/nabu-manage upgrade
+    $NABU_BIN_DIR/nabu-db-manage upgrade
 }
 
 function start_nabu {
